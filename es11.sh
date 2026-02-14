@@ -31,7 +31,7 @@ apt-get install -y \
 
 # Additional kernel hardening
 echo "Additional kernel hardening..."
-cat >> /etc/sysctl.d/99-hardening.conf << 'SYSCTL'
+cat >> /etc/sysctl.d/99-hardening.conf << 'EOF'
 net.ipv4.tcp_sack=0
 net.ipv4.tcp_dsack=0
 net.ipv4.tcp_fack=0
@@ -60,12 +60,12 @@ vm.dirty_background_ratio=5
 net.unix.max_dgram_qlen=50
 kernel.sched_autogroup_enabled=0
 kernel.printk=3 3 3 3
-SYSCTL
+EOF
 sysctl --system
 
 # More module blacklisting
 echo "Additional module blacklisting..."
-cat >> /etc/modprobe.d/blacklist-hardening.conf << 'MODPROBE'
+cat >> /etc/modprobe.d/blacklist-hardening.conf << 'EOF'
 install cifs /bin/true
 install nfs /bin/true
 install nfsv3 /bin/true
@@ -105,11 +105,11 @@ install parport_pc /bin/true
 install ppdev /bin/true
 install mei /bin/true
 install mei_me /bin/true
-MODPROBE
+EOF
 
 # Enhanced SSH
 echo "Enhanced SSH hardening..."
-cat >> /etc/ssh/sshd_config << 'SSH'
+cat >> /etc/ssh/sshd_config << 'EOF'
 RekeyLimit 512M 1h
 AuthenticationMethods publickey
 DisableForwarding yes
@@ -126,7 +126,7 @@ fi
 
 # PAM hardening
 echo "Enhanced PAM hardening..."
-cat > /etc/security/faillock.conf << 'FAILLOCK'
+cat > /etc/security/faillock.conf << 'EOF'
 deny=5
 unlock_time=1800
 fail_interval=900
@@ -134,22 +134,22 @@ audit
 even_deny_root
 root_unlock_time=3600
 dir=/var/run/faillock
-FAILLOCK
+EOF
 
 # PAM password history
 echo "Configuring password history..."
 sed -i '/pam_unix.so/s/$/ remember=12/' /etc/pam.d/common-password 2>/dev/null
 
 # PAM access control
-cat > /etc/security/access.conf << 'ACCESS'
+cat > /etc/security/access.conf << 'EOF'
 + : root : LOCAL
 + : ALL : LOCAL
 - : ALL : ALL
-ACCESS
+EOF
 
 # Additional audit rules
 echo "Additional audit rules..."
-cat >> /etc/audit/rules.d/hardening.rules << 'AUDIT'
+cat >> /etc/audit/rules.d/hardening.rules << 'EOF'
 -w /var/log/audit/ -k auditlog
 -w /etc/audit/ -p wa -k auditconfig
 -w /etc/audisp/ -p wa -k audispconfig
@@ -186,7 +186,7 @@ cat >> /etc/audit/rules.d/hardening.rules << 'AUDIT'
 -a always,exit -F arch=b64 -S chroot -k chroot
 -a always,exit -F arch=b64 -S mknod -k specialfiles
 -a always,exit -F arch=b64 -S mknodat -k specialfiles
-AUDIT
+EOF
 
 sed -i '/-e 2/d' /etc/audit/rules.d/hardening.rules
 echo "-e 2" >> /etc/audit/rules.d/hardening.rules
@@ -325,7 +325,7 @@ ip6tables-save > /etc/iptables/rules.v6 2>/dev/null
 
 # Fail2ban enhancements
 echo "Enhancing fail2ban..."
-cat >> /etc/fail2ban/jail.local << 'FAIL2BAN'
+cat >> /etc/fail2ban/jail.local << 'EOF'
 
 [pam-generic]
 enabled = true
@@ -347,13 +347,13 @@ port = http,https
 filter = nginx-http-auth
 logpath = /var/log/nginx/error.log
 maxretry = 3
-FAIL2BAN
+EOF
 
 systemctl restart fail2ban
 
 # Disable unnecessary kernel modules at boot
 echo "Creating module load restrictions..."
-cat > /etc/modprobe.d/disable-uncommon-filesystems.conf << 'FS'
+cat > /etc/modprobe.d/disable-uncommon-filesystems.conf << 'EOF'
 install cramfs /bin/false
 install freevxfs /bin/false
 install hfs /bin/false
@@ -361,19 +361,19 @@ install hfsplus /bin/false
 install jffs2 /bin/false
 install squashfs /bin/false
 install udf /bin/false
-FS
+EOF
 
-cat > /etc/modprobe.d/disable-uncommon-network.conf << 'NET'
+cat > /etc/modprobe.d/disable-uncommon-network.conf << 'EOF'
 install dccp /bin/false
 install sctp /bin/false
 install rds /bin/false
 install tipc /bin/false
-NET
+EOF
 
 # Journald hardening
 echo "Hardening journald..."
 mkdir -p /etc/systemd/journald.conf.d
-cat > /etc/systemd/journald.conf.d/hardening.conf << 'JOURNALD'
+cat > /etc/systemd/journald.conf.d/hardening.conf << 'EOF'
 [Journal]
 Storage=persistent
 Compress=yes
@@ -382,7 +382,7 @@ SplitMode=uid
 ForwardToSyslog=yes
 MaxRetentionSec=1month
 MaxFileSec=1week
-JOURNALD
+EOF
 systemctl restart systemd-journald
 
 # Restrict compilers more
@@ -429,12 +429,12 @@ fi
 # Restrict systemd-coredump
 echo "Hardening coredump..."
 mkdir -p /etc/systemd/coredump.conf.d
-cat > /etc/systemd/coredump.conf.d/hardening.conf << 'COREDUMP'
+cat > /etc/systemd/coredump.conf.d/hardening.conf << 'EOF'
 [Coredump]
 Storage=none
 ProcessSizeMax=0
 ExternalSizeMax=0
-COREDUMP
+EOF
 
 # Restrict kernel log
 chmod 640 /var/log/kern.log 2>/dev/null
@@ -442,7 +442,7 @@ chmod 640 /var/log/dmesg 2>/dev/null
 
 # Create security report cron
 echo "Creating security report..."
-cat > /etc/cron.weekly/security-report << 'REPORT'
+cat > /etc/cron.weekly/security-report << 'EOF'
 #!/bin/bash
 REPORT_FILE="/var/log/security-report-$(date +%Y%m%d).txt"
 {
@@ -479,18 +479,18 @@ REPORT_FILE="/var/log/security-report-$(date +%Y%m%d).txt"
     echo "===== END REPORT ====="
 } > "$REPORT_FILE"
 chmod 600 "$REPORT_FILE"
-REPORT
+EOF
 chmod 700 /etc/cron.weekly/security-report
 
 # Network hardening via sysctl
 echo "Additional network hardening..."
-cat >> /etc/sysctl.d/99-hardening.conf << 'NETWORK'
+cat >> /etc/sysctl.d/99-hardening.conf << 'EOF'
 net.ipv4.conf.all.bootp_relay=0
 net.ipv4.conf.all.proxy_arp=0
 net.ipv4.conf.default.proxy_arp=0
 net.ipv4.conf.all.arp_filter=1
 net.ipv4.conf.default.arp_filter=1
-NETWORK
+EOF
 sysctl --system
 
 # Harden nsswitch
@@ -502,12 +502,12 @@ fi
 
 # Secure tmp cleanup
 echo "Configuring tmp cleanup..."
-cat > /etc/tmpfiles.d/security.conf << 'TMPFILES'
+cat > /etc/tmpfiles.d/security.conf << 'EOF'
 D /tmp 1777 root root 1d
 D /var/tmp 1777 root root 7d
 e /tmp - - - 1d
 e /var/tmp - - - 7d
-TMPFILES
+EOF
 
 # Harden resolv.conf permissions
 chmod 644 /etc/resolv.conf 2>/dev/null
@@ -529,13 +529,13 @@ chgrp wheel /usr/bin/su 2>/dev/null
 
 # Create checksec cron
 echo "Creating integrity check cron..."
-cat > /etc/cron.daily/integrity-check << 'INTEGRITY'
+cat > /etc/cron.daily/integrity-check << 'EOF'
 #!/bin/bash
 LOG="/var/log/integrity-$(date +%Y%m%d).log"
 echo "Integrity check: $(date)" > "$LOG"
 debsums -s 2>&1 | head -50 >> "$LOG"
 chmod 600 "$LOG"
-INTEGRITY
+EOF
 chmod 700 /etc/cron.daily/integrity-check
 
 # Update AIDE database
