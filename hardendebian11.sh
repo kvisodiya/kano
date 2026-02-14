@@ -14,14 +14,6 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Check internet
-echo "Checking internet..."
-if ! ping -c 1 -W 5 8.8.8.8 >/dev/null 2>&1; then
-    echo "No internet connection"
-    exit 1
-fi
-echo "Internet OK"
-
 # Update system
 echo "Updating system..."
 apt-get update
